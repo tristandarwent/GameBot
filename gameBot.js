@@ -6,10 +6,18 @@ var gameBot = new Discord.Client();
 // Array of game objects
 var games = [
 	{name: "Carcassonne", maxPlayers: 5, nickNames: ["carc", "carcassonne"]},
-	{name: "Lost Cities", maxPlayers: 2, nickNames: ["cuties", "lost cities", "lost cuties"]}
+	{name: "Lost Cities", maxPlayers: 2, nickNames: ["cuties", "lost cities", "lost cuties"]},
+	{name: "Twilight Struggle", maxPlayers: 2, nickNames: ["twilight struggle", "twilight snuggle", "snuggle", "ts"]},
+	{name: "Agricola", maxPlayers: 5, nickNames: ["gric", "agricola"]},
+	{name: "Ascension", maxPlayers: 4, nickNames: ["ascension"]},
+	{name: "Le Havre", maxPlayers: 5, nickNames: ["le havre"]},
+	{name: "Patchwork", maxPlayers: 2, nickNames: ["patchwork", "patches"]},
+	{name: "Lords of Waterdeep", maxPlayers: 6, nickNames: ["lords of waterdeep", "waterdeep", "low"]},
+	{name: "Ticket To Ride", maxPlayers: 5, nickNames: ["ticket to ride", "ttr", "trains"]}
 ];
 
 var sessions = [];
+
 
 // Runs on every message posted in discord
 gameBot.on("message", function(message) {
@@ -17,38 +25,49 @@ gameBot.on("message", function(message) {
 	// Converts message content to lowercase
 	var input = message.content.toLowerCase();
 
-	// Check to see if message starts with !interest keyword
-	if (input.startsWith("!interest")) {
+	// Removes all unecessary spaces (double/triple spaces, leading, trailing, etc.)
+	input = input.replace(/\s{2,}/g, ' ');
 
-		// Checks to see if just "!interest" alone was posted
-		if (input.trim() === "!interest") {
-			showCurrentSessions();
+	// Breaks input into seperate words
+	var inputWords = input.split(" ");
+
+	// If first word is !interest keyword
+	if (inputWords[0] === "!interest") {
+
+		// Removes !interest keyword from input array
+		inputWords.shift();
+
+		var interestCommand = "";
+		var interestModifier = "";
+
+		/** Check for modifiers and remove them from input array **/
+		// Player number modifier
+		if (isInt(inputWords[inputWords.length - 1])) {
+			interestModifier = inputWords.pop();
 		}
 
-		// Grabs any content posted after !interest
-		var interestCommand = input.slice(9);
+		// Combine what's left in the input array as our command
+		interestCommand = inputWords.join(" ");
 
 		console.log(interestCommand);
+		console.log(interestModifier);
 
-
-		// Checks to make sure a space has been placed between !interest and any other command
-		if (interestCommand.charAt(0) === " ") {
-
-			// Trims all whitespace at ends of the command
-			interestCommand = interestCommand.trim();
-
-			// Checks for specific command before running through game array
-			if (interestCommand === "(game name)") {
-				gameBot.sendMessage(message, "smartass");
-			} else {
-				searchForGame(interestCommand);
-			}
+		// Checks for specific command before running through game array
+		if (interestCommand === "") {
+			showCurrentSessions();
+		} else if (interestCommand === "(game name)") {
+			gameBot.sendMessage(message, "smartass");
+		} else {
+			searchForGame(interestCommand, interestModifier);
 		}
+
+	// Game of the month mention check
 	} else if (input.indexOf("gotm") !== -1 || input.indexOf("game of the month") !== -1) {
 		gameBot.sendMessage(message, "*long fart sound*");
 	}
 
 
+	// Shows the current interest checks going on
 	function showCurrentSessions() {
 
 		var sessionsString = ""
@@ -91,34 +110,54 @@ gameBot.on("message", function(message) {
 
 
 	// Searches through games array keywords for specific game name
-	function searchForGame(interest) {
+	function searchForGame(interest, modifier) {
 
-		var gameFound = false;
+		var game = null;
 
 		for (var i = 0; i < games.length; i++) {
 			for (var j = 0; j < games[i].nickNames.length; j++) {
 				if (interest === games[i].nickNames[j]) {
-					startGame(games[i]);
-					gameFound = true;
+					game = games[i];
 				}
 			}
 		}
 
-		if (!gameFound) {
+		// If the game is found...
+		if (game != null) {
+
+			// If modifier is empty start the game with max players
+			if (modifier === "") {
+				startGame(game, game.maxPlayers);
+			// If it isn't...
+			} else {
+				// And is an integer...
+				if (isInt(modifier)) {
+					if (modifier > game.maxPlayers) {
+						gameBot.sendMessage(message, "I'll let you know when " + game.name + " comes out with an expansion for " + modifier + " players.");
+					} else if (modifier == 1) {
+						gameBot.sendMessage(message, "No one wants to know about you playing with yourself.");
+					} else if (modifier <= 0) {
+						gameBot.sendMessage(message, "What are you doing.");
+					} else {
+						startGame(game, modifier);
+					}
+				}
+			}
+		// If the game is not found
+		} else {
 			gameBot.sendMessage(message, "Look, it seems you need some help. Try entering !interest (game name) to start an interest check.");
 		}
 	}
 
 
-
-	function startGame(game) {
+	function startGame(game, players) {
 
 		var Session = {};
 
 		Session.game = game.name;
 		Session.players = [];
 		Session.players.push(message.author.username);
-		Session.maxPlayers = game.maxPlayers;
+		Session.maxPlayers = players;
 
 		sessions.push(Session);
 
@@ -129,6 +168,14 @@ gameBot.on("message", function(message) {
 		gameBot.sendMessage(message, botMessage);
 	}
 });
+
+
+// Checks if passed value is an integer
+function isInt(value) {
+  return !isNaN(value) && 
+         parseInt(Number(value)) == value && 
+         !isNaN(parseInt(value, 10));
+}
 
 
 // Logs GameBot in
