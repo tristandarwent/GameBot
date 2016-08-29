@@ -9,6 +9,7 @@ var games = [
 	{name: "Lost Cities", players: 2, nickNames: ["cuties", "lost cities", "lost cuties"]}
 ];
 
+var sessions = [];
 
 // Runs on every message posted in discord
 gameBot.on("message", function(message) {
@@ -21,7 +22,7 @@ gameBot.on("message", function(message) {
 
 		// Checks to see if just "!interest" alone was posted
 		if (input.trim() === "!interest") {
-			gameBot.sendMessage(message, "Enter !interest (game) to gauge interest in some of these fuckbuckets wanting to play something. HINT: They don't.");
+			showCurrentSessions();
 		}
 
 		// Grabs any content posted after !interest
@@ -37,12 +38,47 @@ gameBot.on("message", function(message) {
 			interestCommand = interestCommand.trim();
 
 			// Checks for specific command before running through game array
-			if (interestCommand === "(game)") {
+			if (interestCommand === "(game name)") {
 				gameBot.sendMessage(message, "smartass");
 			} else {
 				searchForGame(interestCommand);
 			}
 		}
+	}
+
+
+	function showCurrentSessions() {
+
+		var sessionsString = ""
+
+		for (var i = 0; i < sessions.length; i++) {
+
+			if (i === 0) {
+				sessionsString += "\n\nCurrent interests:";
+			}
+
+			var session = sessions[i];
+
+			sessionsString += "\n\n" + session.game;
+
+			var playersNeeded = session.maxPlayers-session.players.length;
+			sessionsString += "\n" + session.players.length + "/" + session.maxPlayers + " players. ";
+
+			if (playersNeeded > 1) {
+				sessionsString +=  playersNeeded + " players needed.";
+			} else {
+				sessionsString +=  playersNeeded + " player needed.";
+			}
+
+			for (var j = 0; j < session.players.length; j++) {
+				sessionsString += "\n" + session.players[j];
+			}
+		}
+
+
+
+
+		gameBot.sendMessage(message, "Enter !interest (game name) to gauge interest in some of these fuckbuckets wanting to play something. HINT: They don't." + sessionsString);
 	}
 
 
@@ -61,13 +97,24 @@ gameBot.on("message", function(message) {
 		}
 
 		if (!gameFound) {
-			gameBot.sendMessage(message, "Invalid command, you muppet.");
+			gameBot.sendMessage(message, "Look, it seems you need some help. Try entering !interest (game name) to start an interest check.");
 		}
 	}
 
 
 
 	function startGame(game) {
+
+		var Session = {};
+
+		Session.game = game.name;
+		Session.players = [];
+		Session.players.push(message.author.username);
+		Session.maxPlayers = game.players;
+
+		sessions.push(Session);
+
+		console.log(sessions);
 
 		var botMessage = message.author.username + " wants to start a game of " + game.name + ". Type !join to join the game."
 
