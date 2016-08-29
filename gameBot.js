@@ -5,8 +5,8 @@ var gameBot = new Discord.Client();
 
 // Array of game objects
 var games = [
-	{name: "Carcassonne", players: 5, nickNames: ["carc", "carcassonne"]},
-	{name: "Lost Cities", players: 2, nickNames: ["cuties", "lost cities", "lost cuties"]}
+	{name: "Carcassonne", maxPlayers: 5, nickNames: ["carc", "carcassonne"]},
+	{name: "Lost Cities", maxPlayers: 2, nickNames: ["cuties", "lost cities", "lost cuties"]}
 ];
 
 var sessions = [];
@@ -44,6 +44,8 @@ gameBot.on("message", function(message) {
 				searchForGame(interestCommand);
 			}
 		}
+	} else if (input.indexOf("gotm") !== -1 || input.indexOf("game of the month") !== -1) {
+		gameBot.sendMessage(message, "*long fart sound*");
 	}
 
 
@@ -71,12 +73,18 @@ gameBot.on("message", function(message) {
 			}
 
 			for (var j = 0; j < session.players.length; j++) {
-				sessionsString += "\n" + session.players[j];
+				
+				var playersString = "";
+
+				if (j != session.players.length) {
+					playersString += session.players[i] + ", "
+				} else {
+					playersString += session.players[i]
+				}
+
+				sessionsString += "\nPlayers: " + session.players[j];
 			}
 		}
-
-
-
 
 		gameBot.sendMessage(message, "Enter !interest (game name) to gauge interest in some of these fuckbuckets wanting to play something. HINT: They don't." + sessionsString);
 	}
@@ -110,7 +118,7 @@ gameBot.on("message", function(message) {
 		Session.game = game.name;
 		Session.players = [];
 		Session.players.push(message.author.username);
-		Session.maxPlayers = game.players;
+		Session.maxPlayers = game.maxPlayers;
 
 		sessions.push(Session);
 
