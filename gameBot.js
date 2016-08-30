@@ -12,7 +12,7 @@ var games = [
 	{name: "Ascension", maxPlayers: 4, nickNames: ["ascension"]},
 	{name: "Le Havre", maxPlayers: 5, nickNames: ["le havre"]},
 	{name: "Patchwork", maxPlayers: 2, nickNames: ["patchwork", "patches"]},
-	{name: "Lords of Waterdeep", maxPlayers: 6, nickNames: ["lords of waterdeep", "waterdeep", "low"]},
+	{name: "Lords of Waterdeep", maxPlayers: 6, nickNames: ["lords of waterdeep", "waterdeep", "low", "lords"]},
 	{name: "Ticket To Ride", maxPlayers: 5, nickNames: ["ticket to ride", "ttr", "trains"]}
 ];
 
@@ -49,16 +49,50 @@ gameBot.on("message", function(message) {
 		// Combine what's left in the input array as our command
 		interestCommand = inputWords.join(" ");
 
-		console.log(interestCommand);
-		console.log(interestModifier);
+		// console.log(interestCommand);
+		// console.log(interestModifier);
 
 		// Checks for specific command before running through game array
 		if (interestCommand === "") {
-			showCurrentSessions();
+			showCurrentSessions("interest");
 		} else if (interestCommand === "(game name)") {
 			gameBot.sendMessage(message, "smartass");
 		} else {
 			searchForGame(interestCommand, interestModifier);
+		}
+
+	// If first work is !remove keyword
+	} else if (inputWords[0] === "!remove") {
+
+		// Checks if the user has a moderator role
+		if (!message.author.hasRole("219480175103049728")) {
+			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
+		// If posted only "!remove"
+		} else if (inputWords.length === 1) {
+			showCurrentSessions("remove");
+		// If content after remove isn't just a single integer
+		} else if (inputWords.length > 2 || !isInt(inputWords[1])) {
+			gameBot.sendMessage(message, "You're freaking me out here.");
+		// If they're trying to remove something under 1
+		} else if (inputWords[1] <= 0) {
+			gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
+		} else {
+
+			var sessionFound = false;
+
+			// Finds session and removes it
+			for (var i = 0; i < sessions.length; i++) {
+				if (sessions[i].id == inputWords[1]) {
+					gameBot.sendMessage(message, sessions[i].game + " removed. Way to go.");
+					sessions.splice(i, 1);
+					sessionFound = true;
+				}
+			}
+
+			// If session can't be found
+			if (!sessionFound) {
+				gameBot.sendMessage(message, "I don't know what you think is going on here but that session doesn't exist.");
+			}
 		}
 
 	// Game of the month mention check
@@ -68,19 +102,19 @@ gameBot.on("message", function(message) {
 
 
 	// Shows the current interest checks going on
-	function showCurrentSessions() {
+	function showCurrentSessions(keyword) {
 
 		var sessionsString = ""
 
 		for (var i = 0; i < sessions.length; i++) {
 
+			var session = sessions[i];
+
 			if (i === 0) {
 				sessionsString += "\n\nCurrent interests:";
 			}
 
-			var session = sessions[i];
-
-			sessionsString += "\n\n" + session.game;
+			sessionsString += "\n\n" + session.id + ". " + session.game;
 
 			var playersNeeded = session.maxPlayers-session.players.length;
 			sessionsString += "\n" + session.players.length + "/" + session.maxPlayers + " players. ";
@@ -105,7 +139,15 @@ gameBot.on("message", function(message) {
 			}
 		}
 
-		gameBot.sendMessage(message, "Enter !interest (game name) to gauge interest in some of these fuckbuckets wanting to play something. HINT: They don't." + sessionsString);
+		var keywordString = "";
+
+		if (keyword === "interest") {
+			keywordString = "Enter !interest (game name) to gauge interest in some of these fuckbuckets wanting to play something. HINT: They don't.";
+		} else if (keyword === "remove") {
+			keywordString = "Enter !remove (session number) to remove that session. Pretty straightforward to be honest."
+		}
+
+		gameBot.sendMessage(message, keywordString + sessionsString);
 	}
 
 
@@ -154,6 +196,7 @@ gameBot.on("message", function(message) {
 
 		var Session = {};
 
+		Session.id = findLowestUnusedIdNumber()
 		Session.game = game.name;
 		Session.players = [];
 		Session.players.push(message.author.username);
@@ -161,13 +204,33 @@ gameBot.on("message", function(message) {
 
 		sessions.push(Session);
 
-		console.log(sessions);
+		sessions.sort(function(a, b) {
+		    return a.id - b.id;
+		});
+
+		// console.log(sessions);
 
 		var botMessage = message.author.username + " wants to start a game of " + game.name + ". Type !join to join the game."
 
 		gameBot.sendMessage(message, botMessage);
 	}
 });
+
+
+function findLowestUnusedIdNumber() {
+
+	if (sessions.length == 0) {
+	    return 1
+	}
+
+	for (var i = 0; i < sessions.length; i++) {
+	    if (sessions[i].id != i + 1) {
+	        return i + 1;
+	    }
+	}
+
+	return sessions.length + 1;
+}
 
 
 // Checks if passed value is an integer
