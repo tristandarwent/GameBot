@@ -237,25 +237,32 @@ gameBot.on("message", function(message) {
 
 	function createSession(game, players) {
 
-		var Session = {};
+		console.log("SESSIONS: " + sessions.length);
 
-		Session.id = findLowestUnusedIdNumber()
-		Session.game = game.name;
-		Session.players = [];
-		Session.players.push(message.author.username);
-		Session.maxPlayers = players;
+		if (sessions.length >= 10) {
+			gameBot.sendMessage(message, "There's plenty of interest for games right now. Why don't you try one of them, you greedy fucker?");
+		} else {
 
-		sessions.push(Session);
+			var Session = {};
 
-		sessions.sort(function(a, b) {
-		    return a.id - b.id;
-		});
+			Session.id = findLowestUnusedIdNumber()
+			Session.game = game.name;
+			Session.players = [];
+			Session.players.push(message.author.username);
+			Session.maxPlayers = players;
 
-		console.log(sessions);
+			sessions.push(Session);
 
-		var botMessage = message.author.username + " wants to start a game of " + game.name + ". Type !join " + Session.id + " to join the game."
+			sessions.sort(function(a, b) {
+			    return a.id - b.id;
+			});
 
-		gameBot.sendMessage(message, botMessage);
+			console.log(sessions);
+
+			var botMessage = message.author.username + " wants to start a game of " + game.name + ". Type !join " + Session.id + " to join the game."
+
+			gameBot.sendMessage(message, botMessage);
+		}
 	}
 
 
@@ -322,4 +329,4 @@ function isInt(value) {
 
 
 // Logs GameBot in
-gameBot.loginWithToken("TOKEN GOES HERE");
+gameBot.loginWithToken("MjE5NjQzNzA0NTAyMjU1NjE3.Cqe8Yg.U7m4JG1x3BPE84xt1M0YCvh54uo");
