@@ -64,35 +64,51 @@ gameBot.on("message", function(message) {
 	// If first work is !remove keyword
 	} else if (inputWords[0] === "!remove") {
 
-		// Checks if the user has a moderator role
-		if (!message.author.hasRole("219480175103049728")) {
+		// Removes !remove keyword from input array
+		inputWords.shift();
+
+		var removeCommand = "";
+
+		removeCommand = inputWords.join(" ");
+
+		// Attempts to find session
+		var sessionPosition = searchForSession(removeCommand);
+
+		var isMod = message.author.hasRole("219480175103049728");
+		var didCreateSession = false;
+		if (sessionPosition != null) {
+			didCreateSession =  message.author.username === sessions[sessionPosition].players[0];
+		}
+
+		// if (isMod) {
+		// 	console.log("IS MOD: true");
+		// } else {
+		// 	console.log("IS MOD: false");
+		// }
+		// // console.log("IS MOD: " + isMod);
+		// console.log("CREATED SESSION: " + didCreateSession);
+
+		// Checks if the user has a moderator role or created the session
+		if (!isMod && !didCreateSession) {
 			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
-		// If posted only "!remove"
-		} else if (inputWords.length === 1) {
-			showCurrentSessions("remove");
-		// If content after remove isn't just a single integer
-		} else if (inputWords.length > 2 || !isInt(inputWords[1])) {
-			gameBot.sendMessage(message, "You're freaking me out here.");
-		// If they're trying to remove something under 1
-		} else if (inputWords[1] <= 0) {
-			gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
-		} else {
-
-			var sessionFound = false;
-
-			// Finds session and removes it
-			for (var i = 0; i < sessions.length; i++) {
-				if (sessions[i].id == inputWords[1]) {
-					gameBot.sendMessage(message, sessions[i].game + " removed. Way to go.");
-					sessions.splice(i, 1);
-					sessionFound = true;
-				}
-			}
-
-			// If session can't be found
-			if (!sessionFound) {
+		// If session couldn't be found with input
+		} else if (sessionPosition === null) {
+			// If posted only "!remove"
+			if (removeCommand === "") {
+				showCurrentSessions("remove");
+			// If content after remove isn't just a single integer
+			} else if (!isInt(removeCommand)) {
+				gameBot.sendMessage(message, "You're freaking me out here.");
+			// If they're trying to remove something under 1
+			} else if (removeCommand <= 0) {
+				gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
+			// If the session just couldn't be found legitimately 
+			} else {
 				gameBot.sendMessage(message, "I don't know what you think is going on here but that session doesn't exist.");
 			}
+		} else {
+			gameBot.sendMessage(message, sessions[sessionPosition].game + " removed. Way to go.");
+			sessions.splice(sessionPosition, 1);
 		}
 
 	// Game of the month mention check
@@ -215,6 +231,18 @@ gameBot.on("message", function(message) {
 		gameBot.sendMessage(message, botMessage);
 	}
 });
+
+
+function searchForSession(id) {
+
+	for (var i = 0; i < sessions.length; i++) {
+		if (sessions[i].id == id) {
+			return i;
+		}
+	}
+
+	return null;
+}
 
 
 function findLowestUnusedIdNumber() {
