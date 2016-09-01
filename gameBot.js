@@ -1,7 +1,9 @@
 var Discord = require("discord.js");
+var fs = require("fs");
 
 var gameBot = new Discord.Client();
 
+console.log("Running GameBot");
 
 // Array of game objects
 var games = [
@@ -18,6 +20,15 @@ var games = [
 ];
 
 var sessions = [];
+
+fs.readFile(__dirname + "/sessions.txt", 'utf8', function (err, data) {
+  if (err) {
+    return console.log(err);
+  } else {
+  	sessions = JSON.parse(data);
+  }
+  console.log(data);
+});
 
 
 // Runs on every message posted in discord
@@ -79,8 +90,6 @@ gameBot.on("message", function(message) {
 			didCreateSession =  message.author.username === sessions[sessionPosition].players[0];
 		}
 
-		console.log(removeCommand);
-
 		// Checks if the user has a moderator role or created the session
 		if (!isMod && !didCreateSession) {
 			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
@@ -105,11 +114,10 @@ gameBot.on("message", function(message) {
 		} else {
 			gameBot.sendMessage(message, sessions[sessionPosition].game + " removed. Way to go.");
 			sessions.splice(sessionPosition, 1);
+			saveSessions();
 		}
 
 	} else if (inputWords[0] === "!join") {
-
-		console.log("JOIN");
 
 		// Removes !join keyword from input array
 		inputWords.shift();
@@ -117,8 +125,6 @@ gameBot.on("message", function(message) {
 		var joinCommand = "";
 
 		joinCommand = inputWords.join(" ");
-
-		console.log(joinCommand);
 
 		if (joinCommand === "") {
 			showCurrentSessions("join");
@@ -237,8 +243,6 @@ gameBot.on("message", function(message) {
 
 	function createSession(game, players) {
 
-		console.log("SESSIONS: " + sessions.length);
-
 		if (sessions.length >= 10) {
 			gameBot.sendMessage(message, "There's plenty of interest for games right now. Why don't you try one of them, you greedy fucker?");
 		} else {
@@ -257,7 +261,9 @@ gameBot.on("message", function(message) {
 			    return a.id - b.id;
 			});
 
-			console.log(sessions);
+			saveSessions();
+
+			// console.log(sessions);
 
 			var botMessage = message.author.username + " wants to start a game of " + game.name + ". Type !join " + Session.id + " to join the game."
 
@@ -275,6 +281,7 @@ gameBot.on("message", function(message) {
 		} else {
 			sessions[id].players.push(message.author.username);
 			gameBot.sendMessage(message, message.author.username + " is also interested in playing game of " + sessions[id].game + ".");
+			saveSessions();
 		}
 	}
 });
@@ -328,5 +335,17 @@ function isInt(value) {
 }
 
 
+function saveSessions() {
+
+	fs.writeFile(__dirname + "/sessions.txt", JSON.stringify(sessions), function(err) {
+		if (err) {
+			return console.log(err);
+		}
+
+		console.log("The file was saved!");
+	});
+}
+
+
 // Logs GameBot in
-gameBot.loginWithToken("MjE5NjQzNzA0NTAyMjU1NjE3.Cqe8Yg.U7m4JG1x3BPE84xt1M0YCvh54uo");
+gameBot.loginWithToken("TOKEN GOES HERE");
