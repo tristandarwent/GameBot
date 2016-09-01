@@ -1,10 +1,13 @@
-FROM node:4-onbuild
+FROM node:argon
 
-RUN mkdir -d /usr/src/gamebot
-WORKDIR /usr/src/gamebot
+WORKDIR /usr/src/app
 
-COPY gameBot.js /usr/src/gamebot/
+COPY gameBot.js /usr/src/app
+COPY sessions.txt /usr/src/app
+COPY bot_token.txt /usr/src/app
+
+RUN npm install --save discord.js
 
 EXPOSE 80
 
-CMD[ "node", "gameBot.js" ]
+CMD [ "node", "gameBot.js" ]
