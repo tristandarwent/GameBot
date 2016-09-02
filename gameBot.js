@@ -47,6 +47,7 @@ var games = [
 	{name: "Tanto Cuore", maxPlayers: 4, nickNames: ["tanto cuore", "tanto", "cuore", "anime maids", "waifus"]}
 ];
 
+
 var sessions = [];
 
 fs.readFile(__dirname + "/sessions.txt", 'utf8', function (err, data) {
@@ -62,6 +63,14 @@ fs.readFile(__dirname + "/sessions.txt", 'utf8', function (err, data) {
 // Runs on every message posted in discord
 gameBot.on("message", function(message) {
 
+  // An array of the commands for the bot
+  var commands = [
+   {name: "interest", func: interestCommand},
+   {name: "remove", func: removeCommand},
+   {name: "join", func: joinCommand},
+   //{name: "help", func: helpCommand},
+  ];
+
 	// Converts message content to lowercase
 	var input = message.content.toLowerCase();
 
@@ -71,108 +80,22 @@ gameBot.on("message", function(message) {
 	// Breaks input into seperate words
 	var inputWords = input.split(" ");
 
-	// If first word is !interest keyword
-	if (inputWords[0] === "!interest") {
+  for (var commandIndex = 0; commandIndex < commands.length; commandIndex++) {
+    if (inputWords[0] === ("!" + commands[commandIndex].name)) { 
 
-		// Removes !interest keyword from input array
-		inputWords.shift();
+      // remove the command name
+      inputWords.shift();
 
-		var interestCommand = "";
-		var interestModifier = "";
+      // run the command, passing in the remaining arguments for the command
+      // to parse itself
+      commands[commandIndex].func(inputWords);
+      return;
+    }
+  }
 
-		/** Check for modifiers and remove them from input array **/
-		// Player number modifier
-		if (isInt(inputWords[inputWords.length - 1])) {
-			interestModifier = inputWords.pop();
-		}
-
-		// Combine what's left in the input array as our command
-		interestCommand = inputWords.join(" ");
-
-		// Checks for specific command before running through game array
-		if (interestCommand === "" && interestModifier === "") {
-			showCurrentSessions("interest");
-		} else if (interestCommand === "(game name)") {
-			gameBot.sendMessage(message, "smartass");
-		} else {
-			searchForGame(interestCommand, interestModifier);
-		}
-
-	// If first work is !remove keyword
-	} else if (inputWords[0] === "!remove") {
-
-		// Removes !remove keyword from input array
-		inputWords.shift();
-
-		var removeCommand = "";
-
-		removeCommand = inputWords.join(" ");
-
-		// Attempts to find session
-		var sessionPosition = searchForSession(removeCommand);
-
-		var isMod = message.author.hasRole("219480175103049728");
-		var didCreateSession = false;
-
-		if (sessionPosition != null) {
-			didCreateSession =  message.author.username === sessions[sessionPosition].players[0];
-		}
-
-		// Checks if the user has a moderator role or created the session
-		if (!isMod && !didCreateSession) {
-			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
-		// If session couldn't be found with input
-		} else if (sessionPosition === null) {
-			// If posted only "!remove"
-			if (removeCommand === "") {
-				showCurrentSessions("remove");
-			// If content was sarcasm
-			} else if (removeCommand === "(game number)") {
-				gameBot.sendMessage(message, "why don't you go remove yourself, funny guy");
-			// If content after remove isn't just a single integer
-			} else if (!isInt(removeCommand)) {
-				gameBot.sendMessage(message, "You're freaking me out here.");
-			// If they're trying to remove something under 1
-			} else if (removeCommand <= 0) {
-				gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
-			// If the session just couldn't be found legitimately 
-			} else {
-				gameBot.sendMessage(message, "I don't know what you think is going on here but that session doesn't exist.");
-			}
-		} else {
-			gameBot.sendMessage(message, sessions[sessionPosition].game + " removed. Way to go.");
-			sessions.splice(sessionPosition, 1);
-			saveSessions();
-		}
-
-	} else if (inputWords[0] === "!join") {
-
-		// Removes !join keyword from input array
-		inputWords.shift();
-
-		var joinCommand = "";
-
-		joinCommand = inputWords.join(" ");
-
-		if (joinCommand === "") {
-			showCurrentSessions("join");
-		}else if (joinCommand === "(game number)") {
-			gameBot.sendMessage(message, "you're the worst");
-		} else if (joinCommand <= 0) {
-			gameBot.sendMessage(message, "I don't think so Tim.");
-		} else if (isInt(joinCommand)) {
-			var sessionId = searchForSession(joinCommand);
-			if (sessionId != null) {
-				addUserToSession(sessionId);
-			} else {
-				gameBot.sendMessage(message, "That session doesn't exist. Try harder.");
-			}
-		} else {
-			gameBot.sendMessage(message, "I don't know what that means. I'm just a robot.");
-		}
-
+  // If no commands are found, check here.
 	// Game of the month mention check
-	} else if (input.indexOf("gotm") !== -1 || input.indexOf("game of the month") !== -1) {
+  if (input.indexOf("gotm") !== -1 || input.indexOf("game of the month") !== -1) {
 		gameBot.sendMessage(message, "*long fart sound*");
 	}
 
@@ -299,6 +222,100 @@ gameBot.on("message", function(message) {
 		}
 	}
 
+
+  function interestCommand(inputWords) {
+    console.log(sessions);
+		var interestCommand = "";
+		var interestModifier = "";
+
+		/** Check for modifiers and remove them from input array **/
+		// Player number modifier
+		if (isInt(inputWords[inputWords.length - 1])) {
+			interestModifier = inputWords.pop();
+		}
+
+		// Combine what's left in the input array as our command
+		interestCommand = inputWords.join(" ");
+
+		// Checks for specific command before running through game array
+		if (interestCommand === "" && interestModifier === "") {
+			showCurrentSessions("interest");
+		} else if (interestCommand === "(game name)") {
+			gameBot.sendMessage(message, "smartass");
+		} else {
+			searchForGame(interestCommand, interestModifier);
+		}
+  }
+
+  function removeCommand(inputWords) {
+		var removeCommand = "";
+
+		removeCommand = inputWords.join(" ");
+
+		// Attempts to find session
+		var sessionPosition = searchForSession(removeCommand);
+
+		var isMod = message.author.hasRole("219480175103049728");
+		var didCreateSession = false;
+
+		if (sessionPosition != null) {
+			didCreateSession =  message.author.username === sessions[sessionPosition].players[0];
+		}
+
+		// Checks if the user has a moderator role or created the session
+		if (!isMod && !didCreateSession) {
+			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
+		// If session couldn't be found with input
+		} else if (sessionPosition === null) {
+			// If posted only "!remove"
+			if (removeCommand === "") {
+				showCurrentSessions("remove");
+			// If content was sarcasm
+			} else if (removeCommand === "(game number)") {
+				gameBot.sendMessage(message, "why don't you go remove yourself, funny guy");
+			// If content after remove isn't just a single integer
+			} else if (!isInt(removeCommand)) {
+				gameBot.sendMessage(message, "You're freaking me out here.");
+			// If they're trying to remove something under 1
+			} else if (removeCommand <= 0) {
+				gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
+			// If the session just couldn't be found legitimately 
+			} else {
+				gameBot.sendMessage(message, "I don't know what you think is going on here but that session doesn't exist.");
+			}
+		} else {
+			gameBot.sendMessage(message, sessions[sessionPosition].game + " removed. Way to go.");
+			sessions.splice(sessionPosition, 1);
+			saveSessions();
+		}
+  }
+  
+  function joinCommand() {
+		var joinCommand = "";
+
+		joinCommand = inputWords.join(" ");
+
+		if (joinCommand === "") {
+			showCurrentSessions("join");
+		}else if (joinCommand === "(game number)") {
+			gameBot.sendMessage(message, "you're the worst");
+		} else if (joinCommand <= 0) {
+			gameBot.sendMessage(message, "I don't think so Tim.");
+		} else if (isInt(joinCommand)) {
+			var sessionId = searchForSession(joinCommand);
+			if (sessionId != null) {
+				addUserToSession(sessionId);
+			} else {
+				gameBot.sendMessage(message, "That session doesn't exist. Try harder.");
+			}
+		} else {
+			gameBot.sendMessage(message, "I don't know what that means. I'm just a robot.");
+		}
+  }
+
+  function helpCommand() {
+    gameBot.sendMessage(message, "you know I need somebodies");
+  }
 
 	function addUserToSession(id) {
 
