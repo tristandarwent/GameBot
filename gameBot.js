@@ -1,27 +1,28 @@
 
 /*
 TODO:
- - !help
- - limit on how many games can be added
- - limit on how many games a user can add
- - !start (think of a solution for this)
- - Mike: notifications for user/creator when a game is full
- - More games support
-   - 
- - add timestamps to sessions
- - automatic timeouts for stale games (24 hours)
-   - remove full games after a time?
- - Full games get moved to their own section so players can see
- - Mike: refactor to make commands more generic/testable
- - Mike: unit tests
- - Mike: !list (generic list command)
- - Mike: Player driven game suggesionts (!register?)
- - Games/nickname system (mods only)
- - user gamecenter/player name registration
- - Mike: more funny messages ala gotm
-   - data driven messages/word match ups
- - Add volume support to docker, rather than importing the .js/session all the time
- - Add travis CI support
+	- !help
+	- limit on how many games can be added
+	- limit on how many games a user can add
+	- !start (think of a solution for this)
+	- Mike: notifications for user/creator when a game is full
+	- More games support
+	- 
+	- add timestamps to sessions
+	- automatic timeouts for stale games (24 hours)
+	- remove full games after a time?
+	- Full games get moved to their own section so players can see
+	- Mike: refactor to make commands more generic/testable
+	- Mike: unit tests
+	- Mike: !list (generic list command)
+	- Mike: Player driven game suggesionts (!register?)
+	- Games/nickname system (mods only)
+	- user gamecenter/player name registration
+	- Mike: more funny messages ala gotm
+	- data driven messages/word match ups
+	- Add volume support to docker, rather than importing the .js/session all the time
+	- Add travis CI support
+	- !trending command
 
 */
 
@@ -50,6 +51,8 @@ var games = [
 
 var sessions = [];
 
+
+// Grabs the already exisiting sessions from sessions.txt
 fs.readFile(__dirname + "/sessions.txt", 'utf8', function (err, data) {
   if (err) {
     return console.log(err);
@@ -63,13 +66,13 @@ fs.readFile(__dirname + "/sessions.txt", 'utf8', function (err, data) {
 // Runs on every message posted in discord
 gameBot.on("message", function(message) {
 
-  // An array of the commands for the bot
-  var commands = [
-   {name: "interest", func: interestCommand},
-   {name: "remove", func: removeCommand},
-   {name: "join", func: joinCommand},
-   //{name: "help", func: helpCommand},
-  ];
+	// An array of the commands for the bot
+		var commands = [
+		{name: "interest", func: interestCommand},
+		{name: "remove", func: removeCommand},
+		{name: "join", func: joinCommand},
+		//{name: "help", func: helpCommand},
+	];
 
 	// Converts message content to lowercase
 	var input = message.content.toLowerCase();
@@ -80,27 +83,130 @@ gameBot.on("message", function(message) {
 	// Breaks input into seperate words
 	var inputWords = input.split(" ");
 
-  for (var commandIndex = 0; commandIndex < commands.length; commandIndex++) {
-    if (inputWords[0] === ("!" + commands[commandIndex].name)) { 
+  	for (var commandIndex = 0; commandIndex < commands.length; commandIndex++) {
 
-      // remove the command name
-      inputWords.shift();
+	    if (inputWords[0] === ("!" + commands[commandIndex].name)) { 
 
-      // run the command, passing in the remaining arguments for the command
-      // to parse itself
-      commands[commandIndex].func(inputWords);
-      return;
-    }
-  }
+	      // remove the command name
+	      inputWords.shift();
 
-  // If no commands are found, check here.
+	      // run the command, passing in the remaining arguments for the command
+	      // to parse itself
+	      commands[commandIndex].func(inputWords);
+	      return;
+	    }
+  	}
+
+  	// If no commands are found, check here.
 	// Game of the month mention check
-  if (input.indexOf("gotm") !== -1 || input.indexOf("game of the month") !== -1) {
+  	if (input.indexOf("gotm") !== -1 || input.indexOf("game of the month") !== -1) {
 		gameBot.sendMessage(message, "*long fart sound*");
 	}
 
 
-	// Shows the current interest checks going on
+	/*** !INTEREST ***/
+	function interestCommand(inputWords) {
+	    console.log(sessions);
+		var interestCommand = "";
+		var interestModifier = "";
+
+		/** Check for modifiers and remove them from input array **/
+		// Player number modifier
+		if (isInt(inputWords[inputWords.length - 1])) {
+			interestModifier = inputWords.pop();
+		}
+
+		// Combine what's left in the input array as our command
+		interestCommand = inputWords.join(" ");
+
+		// Checks for specific command before running through game array
+		if (interestCommand === "" && interestModifier === "") {
+			showCurrentSessions("interest");
+		} else if (interestCommand === "(game name)") {
+			gameBot.sendMessage(message, "smartass");
+		} else {
+			searchForGame(interestCommand, interestModifier);
+		}
+	}
+
+
+	/*** !REMOVE ***/
+  	function removeCommand(inputWords) {
+		var removeCommand = "";
+
+		removeCommand = inputWords.join(" ");
+
+		// Attempts to find session
+		var sessionPosition = searchForSession(removeCommand);
+
+		var isMod = message.author.hasRole("219480175103049728");
+		var didCreateSession = false;
+
+		if (sessionPosition != null) {
+			didCreateSession =  message.author.username === sessions[sessionPosition].players[0];
+		}
+
+		// Checks if the user has a moderator role or created the session
+		if (!isMod && !didCreateSession) {
+			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
+		// If session couldn't be found with input
+		} else if (sessionPosition === null) {
+			// If posted only "!remove"
+			if (removeCommand === "") {
+				showCurrentSessions("remove");
+			// If content was sarcasm
+			} else if (removeCommand === "(game number)") {
+				gameBot.sendMessage(message, "why don't you go remove yourself, funny guy");
+			// If content after remove isn't just a single integer
+			} else if (!isInt(removeCommand)) {
+				gameBot.sendMessage(message, "You're freaking me out here.");
+			// If they're trying to remove something under 1
+			} else if (removeCommand <= 0) {
+				gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
+			// If the session just couldn't be found legitimately 
+			} else {
+				gameBot.sendMessage(message, "I don't know what you think is going on here but that session doesn't exist.");
+			}
+		} else {
+			gameBot.sendMessage(message, sessions[sessionPosition].game + " removed. Way to go.");
+			sessions.splice(sessionPosition, 1);
+			saveSessions();
+		}
+  	}
+
+
+  	/*** !JOIN ***/
+  	function joinCommand(inputWords) {
+		var joinCommand = "";
+
+		joinCommand = inputWords.join(" ");
+
+		if (joinCommand === "") {
+			showCurrentSessions("join");
+		} else if (joinCommand === "(game number)") {
+			gameBot.sendMessage(message, "you're the worst");
+		} else if (joinCommand <= 0) {
+			gameBot.sendMessage(message, "I don't think so Tim.");
+		} else if (isInt(joinCommand)) {
+			var sessionId = searchForSession(joinCommand);
+			if (sessionId != null) {
+				addUserToSession(sessionId);
+			} else {
+				gameBot.sendMessage(message, "That session doesn't exist. Try harder.");
+			}
+		} else {
+			gameBot.sendMessage(message, "I don't know what that means. I'm just a robot.");
+		}
+  	}
+
+
+  	/*** !HELP ***/
+	function helpCommand() {
+		gameBot.sendMessage(message, "you know I need somebodies");
+	}
+
+
+  	// Shows the current interest checks going on
 	function showCurrentSessions(keyword) {
 
 		var sessionsString = ""
@@ -192,6 +298,7 @@ gameBot.on("message", function(message) {
 	}
 
 
+	// Creates a new session
 	function createSession(game, players) {
 
 		if (sessions.length >= 10) {
@@ -223,100 +330,7 @@ gameBot.on("message", function(message) {
 	}
 
 
-  function interestCommand(inputWords) {
-    console.log(sessions);
-		var interestCommand = "";
-		var interestModifier = "";
-
-		/** Check for modifiers and remove them from input array **/
-		// Player number modifier
-		if (isInt(inputWords[inputWords.length - 1])) {
-			interestModifier = inputWords.pop();
-		}
-
-		// Combine what's left in the input array as our command
-		interestCommand = inputWords.join(" ");
-
-		// Checks for specific command before running through game array
-		if (interestCommand === "" && interestModifier === "") {
-			showCurrentSessions("interest");
-		} else if (interestCommand === "(game name)") {
-			gameBot.sendMessage(message, "smartass");
-		} else {
-			searchForGame(interestCommand, interestModifier);
-		}
-  }
-
-  function removeCommand(inputWords) {
-		var removeCommand = "";
-
-		removeCommand = inputWords.join(" ");
-
-		// Attempts to find session
-		var sessionPosition = searchForSession(removeCommand);
-
-		var isMod = message.author.hasRole("219480175103049728");
-		var didCreateSession = false;
-
-		if (sessionPosition != null) {
-			didCreateSession =  message.author.username === sessions[sessionPosition].players[0];
-		}
-
-		// Checks if the user has a moderator role or created the session
-		if (!isMod && !didCreateSession) {
-			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
-		// If session couldn't be found with input
-		} else if (sessionPosition === null) {
-			// If posted only "!remove"
-			if (removeCommand === "") {
-				showCurrentSessions("remove");
-			// If content was sarcasm
-			} else if (removeCommand === "(game number)") {
-				gameBot.sendMessage(message, "why don't you go remove yourself, funny guy");
-			// If content after remove isn't just a single integer
-			} else if (!isInt(removeCommand)) {
-				gameBot.sendMessage(message, "You're freaking me out here.");
-			// If they're trying to remove something under 1
-			} else if (removeCommand <= 0) {
-				gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
-			// If the session just couldn't be found legitimately 
-			} else {
-				gameBot.sendMessage(message, "I don't know what you think is going on here but that session doesn't exist.");
-			}
-		} else {
-			gameBot.sendMessage(message, sessions[sessionPosition].game + " removed. Way to go.");
-			sessions.splice(sessionPosition, 1);
-			saveSessions();
-		}
-  }
-  
-  function joinCommand(inputWords) {
-		var joinCommand = "";
-
-		joinCommand = inputWords.join(" ");
-
-		if (joinCommand === "") {
-			showCurrentSessions("join");
-		}else if (joinCommand === "(game number)") {
-			gameBot.sendMessage(message, "you're the worst");
-		} else if (joinCommand <= 0) {
-			gameBot.sendMessage(message, "I don't think so Tim.");
-		} else if (isInt(joinCommand)) {
-			var sessionId = searchForSession(joinCommand);
-			if (sessionId != null) {
-				addUserToSession(sessionId);
-			} else {
-				gameBot.sendMessage(message, "That session doesn't exist. Try harder.");
-			}
-		} else {
-			gameBot.sendMessage(message, "I don't know what that means. I'm just a robot.");
-		}
-  }
-
-  function helpCommand() {
-    gameBot.sendMessage(message, "you know I need somebodies");
-  }
-
+	// Adds the user to passed session if the user isn't already in it or the session isn't full
 	function addUserToSession(id) {
 
 		if (sessions[id].players.length === sessions[id].maxPlayers) {
@@ -332,6 +346,7 @@ gameBot.on("message", function(message) {
 });
 
 
+// Search for the session with the id that is passed
 function searchForSession(id) {
 
 	for (var i = 0; i < sessions.length; i++) {
@@ -344,6 +359,7 @@ function searchForSession(id) {
 }
 
 
+// Search for player within a specfic session
 function searchForPlayers(id, player) {
 
 	for (var i = 0; i < sessions[id].players.length; i++) {
@@ -356,6 +372,7 @@ function searchForPlayers(id, player) {
 }
 
 
+// Finds the lowest id number that is currently not being used
 function findLowestUnusedIdNumber() {
 
 	if (sessions.length == 0) {
@@ -374,15 +391,15 @@ function findLowestUnusedIdNumber() {
 
 // Checks if passed value is an integer
 function isInt(value) {
-  return !isNaN(value) && 
-         parseInt(Number(value)) == value && 
-         !isNaN(parseInt(value, 10));
+  return !isNaN(value) && parseInt(Number(value)) == value && !isNaN(parseInt(value, 10));
 }
 
 
+// Save the sessions array to permanent .txt file
 function saveSessions() {
 
 	fs.writeFile(__dirname + "/sessions.txt", JSON.stringify(sessions), function(err) {
+
 		if (err) {
 			return console.log(err);
 		}
@@ -391,13 +408,15 @@ function saveSessions() {
 	});
 }
 
+
 // We are expecting the token file to be JSON, with a "token" field
 // with the value set to the bot's token.
 function getToken() {
-  var contents = fs.readFileSync(__dirname + "/bot_token.json", 'utf8');
-  jsonData = JSON.parse(contents);
-  return jsonData.token;
+	var contents = fs.readFileSync(__dirname + "/bot_token.json", 'utf8');
+	jsonData = JSON.parse(contents);
+	return jsonData.token;
 }
+
 
 var token = getToken();
 gameBot.loginWithToken(token);
