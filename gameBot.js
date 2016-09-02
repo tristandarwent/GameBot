@@ -346,6 +346,14 @@ function saveSessions() {
 	});
 }
 
+// We are expecting the token file to be JSON, with a "token" field
+// with the value set to the bot's token.
+function getToken() {
+  var contents = fs.readFileSync(__dirname + "/bot_token.json", 'utf8');
+  jsonData = JSON.parse(contents);
+  return jsonData.token;
+}
 
-// Logs GameBot in
-gameBot.loginWithToken("TOKEN GOES HERE");
+var token = getToken();
+gameBot.loginWithToken(token);
+//gameBot.loginWithToken("INSERT TOKEN HERE")

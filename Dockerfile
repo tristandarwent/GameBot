@@ -6,7 +6,7 @@ RUN npm install --save discord.js
 
 COPY gameBot.js /usr/src/app
 COPY sessions.txt /usr/src/app
-COPY bot_token.txt /usr/src/app
+COPY bot_token.json /usr/src/app
 
 EXPOSE 8080
 
