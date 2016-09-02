@@ -10,7 +10,7 @@ That file must contain a field called token, with value being your given bots to
 For example
 ```json
 {
-  "token": "YOURTOKEN"}
+  "token": "YOURTOKEN"
 }
 ```
 
