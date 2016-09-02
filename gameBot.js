@@ -290,7 +290,7 @@ gameBot.on("message", function(message) {
 		}
   }
   
-  function joinCommand() {
+  function joinCommand(inputWords) {
 		var joinCommand = "";
 
 		joinCommand = inputWords.join(" ");
