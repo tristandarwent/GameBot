@@ -1,3 +1,31 @@
+
+/*
+TODO:
+ - !help
+ - limit on how many games can be added
+ - limit on how many games a user can add
+ - !start (think of a solution for this)
+ - Mike: notifications for user/creator when a game is full
+ - More games support
+   - 
+ - add timestamps to sessions
+ - automatic timeouts for stale games (24 hours)
+   - remove full games after a time?
+ - Full games get moved to their own section so players can see
+ - Mike: refactor to make commands more generic/testable
+ - Mike: unit tests
+ - Mike: !list (generic list command)
+ - Mike: Player driven game suggesionts (!register?)
+ - Games/nickname system (mods only)
+ - user gamecenter/player name registration
+ - Mike: more funny messages ala gotm
+   - data driven messages/word match ups
+ - Add volume support to docker, rather than importing the .js/session all the time
+ - Add travis CI support
+
+*/
+
+
 var Discord = require("discord.js");
 var fs = require("fs");
 
