@@ -36,16 +36,16 @@ console.log("Running GameBot");
 
 // Array of game objects
 var games = [
-	{name: "Carcassonne", maxPlayers: 5, nickNames: ["carc", "carcassonne"]},
-	{name: "Lost Cities", maxPlayers: 2, nickNames: ["cuties", "lost cities", "lost cuties"]},
-	{name: "Twilight Struggle", maxPlayers: 2, nickNames: ["twilight struggle", "twilight snuggle", "snuggle", "ts"]},
-	{name: "Agricola", maxPlayers: 5, nickNames: ["gric", "agricola"]},
-	{name: "Ascension", maxPlayers: 4, nickNames: ["ascension"]},
-	{name: "Le Havre", maxPlayers: 5, nickNames: ["le havre"]},
-	{name: "Patchwork", maxPlayers: 2, nickNames: ["patchwork", "patches"]},
-	{name: "Lords of Waterdeep", maxPlayers: 6, nickNames: ["lords of waterdeep", "waterdeep", "low", "lords"]},
-	{name: "Ticket To Ride", maxPlayers: 5, nickNames: ["ticket to ride", "ttr", "trains"]},
-	{name: "Tanto Cuore", maxPlayers: 4, nickNames: ["tanto cuore", "tanto", "cuore", "anime maids", "waifus"]}
+	{name: "Carcassonne", maxPlayers: 5, nickNames: ["carc", "carcassonne"], hidden: false},
+	{name: "Lost Cities", maxPlayers: 2, nickNames: ["cuties", "lost cities", "lost cuties"], hidden: false},
+	{name: "Twilight Struggle", maxPlayers: 2, nickNames: ["twilight struggle", "twilight snuggle", "snuggle", "ts"], hidden: false},
+	{name: "Agricola", maxPlayers: 5, nickNames: ["gric", "agricola"], hidden: false},
+	{name: "Ascension", maxPlayers: 4, nickNames: ["ascension"], hidden: false},
+	{name: "Le Havre", maxPlayers: 5, nickNames: ["le havre"], hidden: false},
+	{name: "Patchwork", maxPlayers: 2, nickNames: ["patchwork", "patches"], hidden: false},
+	{name: "Lords of Waterdeep", maxPlayers: 6, nickNames: ["lords of waterdeep", "waterdeep", "low", "lords"], hidden: false},
+	{name: "Ticket To Ride", maxPlayers: 5, nickNames: ["ticket to ride", "ttr", "trains"], hidden: false},
+	{name: "Tanto Cuore", maxPlayers: 4, nickNames: ["tanto cuore", "tanto", "cuore", "anime maids", "waifus"], hidden: true}
 ];
 
 
@@ -67,11 +67,24 @@ fs.readFile(__dirname + "/sessions.txt", 'utf8', function (err, data) {
 gameBot.on("message", function(message) {
 
 	// An array of the commands for the bot
-		var commands = [
-		{name: "interest", func: interestCommand},
-		{name: "remove", func: removeCommand},
-		{name: "join", func: joinCommand},
-		//{name: "help", func: helpCommand},
+	// NOTE(Mike): The help strings are a terrible horrible mess, perhaps move them out of h ere to a more editable/central place
+	var commands = [
+		{name: "interest", 
+			func: interestCommand,
+			shortHelpText: "Tell the world you're interested in a game!  Type !interest (game) to start off!",
+			longHelpText: "Tell GameBot(TM) you want to play a game\n\t!interest: list all current games\n\t!interest (game name): Register your interest in playing (game name), with the default number of players.\n\t!interest (game name) (number of players): Register your interest in playing (game name), but with only for (number of players)"},
+		{name: "remove", 
+			func: removeCommand,
+			shortHelpText: "Delete a game, because no one wants to play with you.",
+			longHelpText: "Remove a specfic game from the list.  Only the starter of the game can do this.\n\t!remove: lists all current games\n\t!remove (game number): removes (game number) from the list of games people can join."},
+		{name: "join", 
+			func: joinCommand,
+			shortHelpText: "Join someone elses game, get their hopes up!",
+			longHelpText: "Join a game.\n\t!join (game number) will join the appropriately numbered game.\n\t!join will list all available games"},
+		{name: "help", func: 
+			helpCommand,
+			shortHelpText: "Get help (...again).",
+			longHelpText: "Find help about a specific comamnd.\n\t!help (command): get detailed information about a command, and maybe the answer to life itself."},
 	];
 
 	// Converts message content to lowercase
@@ -201,8 +214,54 @@ gameBot.on("message", function(message) {
 
 
   	/*** !HELP ***/
-	function helpCommand() {
-		gameBot.sendMessage(message, "you know I need somebodies");
+	function helpCommand(inputWords) {
+		var helpString = "";
+	    if (inputWords.length > 1) { 
+ 			helpString += "Just type !help for more info (seriously, get help)";
+		}	
+		else if (inputWords.length == 1) {
+			if(inputWords[0] === "games") { // Are they just asking for a list of games?
+				helpString += "Here are the games GameBot(TM) cares about:\n\n"
+				for (var gameIndex = 0; gameIndex < games.length; gameIndex++) {
+					if(games[gameIndex].hidden === false) {
+						helpString += "\t";
+						helpString += games[gameIndex].name;
+						helpString += "\n";
+					}
+				}
+			}
+			else { // Try and match the word given to a command
+				var foundCommand = false;
+				for (var commandIndex = 0; commandIndex < commands.length; commandIndex++) {
+					if (inputWords[0] === commands[commandIndex].name) {
+						foundCommand = true;
+						helpString += commands[commandIndex].longHelpText;
+					}
+				}
+				if (foundCommand === false) {  // Iditos!
+					helpString += "I don't know about the command \"";
+					helpString += inputWords[0];
+					helpString += "\", why don't you try something else, you muppet!";
+				}
+			}	
+		}
+		else {
+			helpString += "GameBot (TM): servicing your game bot needs! Type the following into chat to talk to GameBot (TM)\n\n";
+			// Build a string similar to 
+			// !<commandName>: <ShortHelpText>
+			for (var commandIndex = 0; commandIndex < commands.length; commandIndex++) {
+				helpString += "\t !";
+			    helpString += commands[commandIndex].name;
+			    helpString += ": ";
+				helpString += commands[commandIndex].shortHelpText;
+				helpString += "\n";
+			}
+			helpString += "\nType !help games to get a list of all available games\n";
+			helpString += "\nType !help (command) for more information about that command.";
+	    }	
+		//
+		// Finally, send the built message
+		gameBot.sendMessage(message, helpString); 
 	}
 
 
