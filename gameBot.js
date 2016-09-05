@@ -1,7 +1,6 @@
 
 /*
 TODO:
-	- !help
 	- limit on how many games can be added
 	- limit on how many games a user can add
 	- !start (think of a solution for this)
@@ -14,7 +13,6 @@ TODO:
 	- Full games get moved to their own section so players can see
 	- Mike: refactor to make commands more generic/testable
 	- Mike: unit tests
-	- Mike: !list (generic list command)
 	- Mike: Player driven game suggesionts (!register?)
 	- Games/nickname system (mods only)
 	- user gamecenter/player name registration
@@ -69,22 +67,36 @@ gameBot.on("message", function(message) {
 	// An array of the commands for the bot
 	// NOTE(Mike): The help strings are a terrible horrible mess, perhaps move them out of h ere to a more editable/central place
 	var commands = [
-		{name: "interest", 
+		{
+			name: "interest", 
 			func: interestCommand,
 			shortHelpText: "Tell the world you're interested in a game!  Type !interest (game) to start off!",
-			longHelpText: "Tell GameBot(TM) you want to play a game\n\t!interest: list all current games\n\t!interest (game name): Register your interest in playing (game name), with the default number of players.\n\t!interest (game name) (number of players): Register your interest in playing (game name), but with only for (number of players)"},
-		{name: "remove", 
+			longHelpText: "Tell GameBot(TM) you want to play a game\n\t!interest: list all current games\n\t!interest (game name): Register your interest in playing (game name), with the default number of players.\n\t!interest (game name) (number of players): Register your interest in playing (game name), but with only for (number of players)"
+		},
+		{
+			name: "remove", 
 			func: removeCommand,
 			shortHelpText: "Delete a game, because no one wants to play with you.",
-			longHelpText: "Remove a specfic game from the list.  Only the starter of the game can do this.\n\t!remove: lists all current games\n\t!remove (game number): removes (game number) from the list of games people can join."},
-		{name: "join", 
+			longHelpText: "Remove a specfic game from the list.  Only the starter of the game can do this.\n\t!remove: lists all current games\n\t!remove (game number): removes (game number) from the list of games people can join."
+		},
+		{
+			name: "join", 
 			func: joinCommand,
 			shortHelpText: "Join someone elses game, get their hopes up!",
-			longHelpText: "Join a game.\n\t!join (game number) will join the appropriately numbered game.\n\t!join will list all available games"},
-		{name: "help", func: 
-			helpCommand,
+			longHelpText: "Join a game.\n\t!join: list all available games\n\t!join (game number): join the game with the same number as (game number)."
+		},
+		{
+			name: "list",
+			func: listCommand,
+			shortHelpText: "List the current active games",
+			longHelpText: "Get a list of the current active games.\n\t!list: list all current games\n\t!list (game name): List all games of (game name)."
+		},
+		{
+			name: "help", 
+			func: helpCommand,
 			shortHelpText: "Get help (...again).",
-			longHelpText: "Find help about a specific comamnd.\n\t!help (command): get detailed information about a command, and maybe the answer to life itself."},
+			longHelpText: "Find help about a specific comamnd.\n\t!help (command): get detailed information about a command, and maybe the answer to life itself."
+		},
 	];
 
 	// Converts message content to lowercase
@@ -256,27 +268,45 @@ gameBot.on("message", function(message) {
 				helpString += commands[commandIndex].shortHelpText;
 				helpString += "\n";
 			}
-			helpString += "\nType !help games to get a list of all available games\n";
+
+			helpString += "\nType !help games to get a list of all available games.";
 			helpString += "\nType !help (command) for more information about that command.";
 	    }	
 		//
 		// Finally, send the built message
 		gameBot.sendMessage(message, helpString); 
 	}
-
+ 
+	function listCommand(inputWords) {
+		if (inputWords.length === 0) {
+			showCurrentSessions("list")
+		}
+		else if(inputWords.length === 1) { // Passed a game name...
+			requestedGame = findGameByNickname(inputWords[0]);
+		    if (requestedGame != null) {
+				showCurrentSessions("list", requestedGame.name);
+			} else {
+				gameBot.sendMessage(message, "list: what did you call me?");
+			}
+		}
+		else {
+			gameBot.sendMessage(message, "list: you want to list what?");
+		}
+	}
 
   	// Shows the current interest checks going on
-	function showCurrentSessions(keyword) {
+	function showCurrentSessions(keyword, gameName) {
 
-		var sessionsString = ""
+		var sessionsString = "";
+		var sessionsFound = 0;
 
 		for (var i = 0; i < sessions.length; i++) {
 
 			var session = sessions[i];
 
-			if (i === 0) {
-				sessionsString += "\n\nCurrent interests:";
-			}
+			// don't add the game to the list if we've specified a filter
+			if(gameName != null && session.game != gameName)
+				continue;
 
 			sessionsString += "\n\n" + session.id + ". " + session.game;
 
@@ -300,6 +330,7 @@ gameBot.on("message", function(message) {
 			}
 
 			sessionsString += "\nPlayers: " + playersString;
+			sessionsFound += 1;
 		}
 
 		var keywordString = "";
@@ -310,24 +341,34 @@ gameBot.on("message", function(message) {
 			keywordString = "Enter !remove (game number) to remove that session. Pretty straightforward to be honest."
 		} else if (keyword === "join") {
 			keywordString = "Enter !join (game number) to show you're interested in playing that game. Then hope they don't hate you."
+		} 
+
+		if (sessionsFound == 0) {
+			sessionsString = "No sessions found\n" + sessionsString;
+		} else {
+			sessionsString = "\n\nCurrent interests (" + sessionsFound + "):" + sessionsString;
 		}
 
 		gameBot.sendMessage(message, keywordString + sessionsString);
 	}
 
 
-	// Searches through games array keywords for specific game name
-	function searchForGame(interest, modifier) {
-
-		var game = null;
-
+	// given a nickname, find the game relating to it. 
+	function findGameByNickname(nickName) {
 		for (var i = 0; i < games.length; i++) {
 			for (var j = 0; j < games[i].nickNames.length; j++) {
-				if (interest === games[i].nickNames[j]) {
-					game = games[i];
+				if (nickName === games[i].nickNames[j]) {
+					return games[i];
 				}
 			}
 		}
+
+		return null;
+	}
+
+	// Searches through games array keywords for specific game name
+	function searchForGame(interest, modifier) {
+		var game = findGameByNickname(interest);
 
 		// If the game is found...
 		if (game != null) {
