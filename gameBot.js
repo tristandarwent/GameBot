@@ -350,4 +350,4 @@ function saveSessions() {
 
 
 // Logs GameBot in
-gameBot.login("MjE5NjQzNzA0NTAyMjU1NjE3.CrTftg.9Ksqq8rqeUcMDA67L_W_bQOsDKY");
+gameBot.login("TOKEN GOES HERE");
