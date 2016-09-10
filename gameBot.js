@@ -34,6 +34,8 @@ fs.readFile(__dirname + "/sessions.txt", 'utf8', function (err, data) {
 // Runs on every message posted in discord
 gameBot.on("message", function(message) {
 
+	var channel = message.channel;
+
 	// Converts message content to lowercase
 	var input = message.content.toLowerCase();
 
@@ -65,7 +67,7 @@ gameBot.on("message", function(message) {
 		if (interestCommand === "" && interestModifier === "") {
 			showCurrentSessions("interest");
 		} else if (interestCommand === "(game name)") {
-			gameBot.sendMessage(message, "smartass");
+			channel.sendMessage("smartass");
 		} else {
 			searchForGame(interestCommand, interestModifier);
 		}
@@ -83,7 +85,7 @@ gameBot.on("message", function(message) {
 		// Attempts to find session
 		var sessionPosition = searchForSession(removeCommand);
 
-		var isMod = message.author.hasRole("219480175103049728");
+		var isMod = message.member.roles.exists("name" ,"FartBoys");
 		var didCreateSession = false;
 
 		if (sessionPosition != null) {
@@ -92,7 +94,7 @@ gameBot.on("message", function(message) {
 
 		// Checks if the user has a moderator role or created the session
 		if (!isMod && !didCreateSession) {
-			gameBot.sendMessage(message, "You don't have permission to do that. Ha ha, loser.");
+			channel.sendMessage("You don't have permission to do that. Ha ha, loser.");
 		// If session couldn't be found with input
 		} else if (sessionPosition === null) {
 			// If posted only "!remove"
@@ -100,19 +102,19 @@ gameBot.on("message", function(message) {
 				showCurrentSessions("remove");
 			// If content was sarcasm
 			} else if (removeCommand === "(game number)") {
-				gameBot.sendMessage(message, "why don't you go remove yourself, funny guy");
+				channel.sendMessage("why don't you go remove yourself, funny guy");
 			// If content after remove isn't just a single integer
 			} else if (!isInt(removeCommand)) {
-				gameBot.sendMessage(message, "You're freaking me out here.");
+				channel.sendMessage("You're freaking me out here.");
 			// If they're trying to remove something under 1
 			} else if (removeCommand <= 0) {
-				gameBot.sendMessage(message, "I'm pretty sure you know that's wrong.");
+				channel.sendMessage("I'm pretty sure you know that's wrong.");
 			// If the session just couldn't be found legitimately 
 			} else {
-				gameBot.sendMessage(message, "I don't know what you think is going on here but that session doesn't exist.");
+				channel.sendMessage("I don't know what you think is going on here but that session doesn't exist.");
 			}
 		} else {
-			gameBot.sendMessage(message, sessions[sessionPosition].game + " removed. Way to go.");
+			channel.sendMessage(sessions[sessionPosition].game + " removed. Way to go.");
 			sessions.splice(sessionPosition, 1);
 			saveSessions();
 		}
@@ -129,23 +131,23 @@ gameBot.on("message", function(message) {
 		if (joinCommand === "") {
 			showCurrentSessions("join");
 		}else if (joinCommand === "(game number)") {
-			gameBot.sendMessage(message, "you're the worst");
+			channel.sendMessage("you're the worst");
 		} else if (joinCommand <= 0) {
-			gameBot.sendMessage(message, "I don't think so Tim.");
+			channel.sendMessage("I don't think so Tim.");
 		} else if (isInt(joinCommand)) {
 			var sessionId = searchForSession(joinCommand);
 			if (sessionId != null) {
 				addUserToSession(sessionId);
 			} else {
-				gameBot.sendMessage(message, "That session doesn't exist. Try harder.");
+				channel.sendMessage("That session doesn't exist. Try harder.");
 			}
 		} else {
-			gameBot.sendMessage(message, "I don't know what that means. I'm just a robot.");
+			channel.sendMessage("I don't know what that means. I'm just a robot.");
 		}
 
 	// Game of the month mention check
 	} else if (input.indexOf("gotm") !== -1 || input.indexOf("game of the month") !== -1) {
-		gameBot.sendMessage(message, "*long fart sound*");
+		channel.sendMessage("*long fart sound*");
 	}
 
 
@@ -196,7 +198,7 @@ gameBot.on("message", function(message) {
 			keywordString = "Enter !join (game number) to show you're interested in playing that game. Then hope they don't hate you."
 		}
 
-		gameBot.sendMessage(message, keywordString + sessionsString);
+		channel.sendMessage(keywordString + sessionsString);
 	}
 
 
@@ -224,11 +226,11 @@ gameBot.on("message", function(message) {
 				// And is an integer...
 				if (isInt(modifier)) {
 					if (modifier > game.maxPlayers) {
-						gameBot.sendMessage(message, "I'll let you know when " + game.name + " comes out with an expansion for " + modifier + " players.");
+						channel.sendMessage("I'll let you know when " + game.name + " comes out with an expansion for " + modifier + " players.");
 					} else if (modifier == 1) {
-						gameBot.sendMessage(message, "No one wants to know about you playing with yourself.");
+						channel.sendMessage("No one wants to know about you playing with yourself.");
 					} else if (modifier <= 0) {
-						gameBot.sendMessage(message, "What are you doing.");
+						channel.sendMessage("What are you doing.");
 					} else {
 						createSession(game, modifier);
 					}
@@ -236,7 +238,7 @@ gameBot.on("message", function(message) {
 			}
 		// If the game is not found
 		} else {
-			gameBot.sendMessage(message, "Look, it seems you need some help. Try entering !interest (game name) to start an interest check.");
+			channel.sendMessage("Look, it seems you need some help. Try entering !interest (game name) to start an interest check.");
 		}
 	}
 
@@ -244,7 +246,7 @@ gameBot.on("message", function(message) {
 	function createSession(game, players) {
 
 		if (sessions.length >= 10) {
-			gameBot.sendMessage(message, "There's plenty of interest for games right now. Why don't you try one of them, you greedy fucker?");
+			channel.sendMessage("There's plenty of interest for games right now. Why don't you try one of them, you greedy fucker?");
 		} else {
 
 			var Session = {};
@@ -267,7 +269,7 @@ gameBot.on("message", function(message) {
 
 			var botMessage = message.author.username + " wants to start a game of " + game.name + ". Type !join " + Session.id + " to join the game."
 
-			gameBot.sendMessage(message, botMessage);
+			channel.sendMessage(botMessage);
 		}
 	}
 
@@ -275,12 +277,12 @@ gameBot.on("message", function(message) {
 	function addUserToSession(id) {
 
 		if (sessions[id].players.length === sessions[id].maxPlayers) {
-			gameBot.sendMessage(message, "That session is full. It's okay, they probably didn't want to play with you anyway.");
+			channel.sendMessage("That session is full. It's okay, they probably didn't want to play with you anyway.");
 		} else if (searchForPlayers(id, message.author.username)){
-			gameBot.sendMessage(message, "You're already in that session of " + sessions[id].game + ". You knew that, right?");
+			channel.sendMessage("You're already in that session of " + sessions[id].game + ". You knew that, right?");
 		} else {
 			sessions[id].players.push(message.author.username);
-			gameBot.sendMessage(message, message.author.username + " is also interested in playing game of " + sessions[id].game + ".");
+			channel.sendMessage(message.author.username + " is also interested in playing game of " + sessions[id].game + ".");
 			saveSessions();
 		}
 	}
@@ -348,4 +350,4 @@ function saveSessions() {
 
 
 // Logs GameBot in
-gameBot.loginWithToken("TOKEN GOES HERE");
+gameBot.login("MjE5NjQzNzA0NTAyMjU1NjE3.CrTftg.9Ksqq8rqeUcMDA67L_W_bQOsDKY");
