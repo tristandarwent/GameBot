@@ -19,7 +19,7 @@ var games = [
 	{name: "Tanto Cuore", maxPlayers: 4, nickNames: ["tanto cuore", "tanto", "cuore", "anime maids", "waifus"]},
 	{name: "Sushi Go!", maxPlayers: 5, nickNames: ["sushi go", "sushi go!", "sushi"]},
 	{name: "Le Havre: The Inland Port", maxPlayers: 2, nickNames: ["inland port", "le havre inland port", "le havre the inland port", "le havre: the inland port", "le havre: inland port"]},
-	{name: "Agricola: All Creatures Big and Small", maxPlayers: 2, nickNames: ["agricola: all creatures big and small", "agricola all creatures big and small", "gric creatures", "gric: creatures", "creatures", "agricola: acbas", "agricola acbas", "gric albas", "albas"]},
+	{name: "Agricola: All Creatures Big and Small", maxPlayers: 2, nickNames: ["agricola: all creatures big and small", "agricola all creatures big and small", "gric creatures", "gric: creatures", "creatures", "agricola: acbas", "agricola acbas", "gric albas", "acbas"]},
 	{name: "Brass", maxPlayers: 4, nickNames: ["brass"]},
 	{name: "Galaxy Trucker", maxPlayers: 4, nickNames: ["galaxy trucker", "space trucks", "trucks"]},
 	{name: "Small World", maxPlayers: 5, nickNames: ["small world"]},
