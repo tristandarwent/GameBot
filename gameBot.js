@@ -16,7 +16,17 @@ var games = [
 	{name: "Patchwork", maxPlayers: 2, nickNames: ["patchwork", "patches"]},
 	{name: "Lords of Waterdeep", maxPlayers: 6, nickNames: ["lords of waterdeep", "waterdeep", "low", "lords"]},
 	{name: "Ticket To Ride", maxPlayers: 5, nickNames: ["ticket to ride", "ttr", "trains"]},
-	{name: "Tanto Cuore", maxPlayers: 4, nickNames: ["tanto cuore", "tanto", "cuore", "anime maids", "waifus"]}
+	{name: "Tanto Cuore", maxPlayers: 4, nickNames: ["tanto cuore", "tanto", "cuore", "anime maids", "waifus"]},
+	{name: "Sushi Go!", maxPlayers: 5, nickNames: ["sushi go", "sushi go!", "sushi"]},
+	{name: "Le Havre: The Inland Port", maxPlayers: 2, nickNames: ["inland port", "le havre inland port", "le havre the inland port", "le havre: the inland port", "le havre: inland port"]},
+	{name: "Agricola: All Creatures Big and Small", maxPlayers: 2, nickNames: ["agricola: all creatures big and small", "agricola all creatures big and small", "gric creatures", "gric: creatures", "creatures", "agricola: acbas", "agricola acbas", "gric albas", "albas"]},
+	{name: "Brass", maxPlayers: 4, nickNames: ["brass"]},
+	{name: "Galaxy Trucker", maxPlayers: 4, nickNames: ["galaxy trucker", "space trucks", "trucks"]},
+	{name: "Small World", maxPlayers: 5, nickNames: ["small world"]},
+	{name: "Puerto Rico", maxPlayers: 5, nickNames: ["puerto rico"]},
+	{name: "Tigris and Euphrates", maxPlayers: 4, nickNames: ["tigris and euphrates", "tigris", "euphrates", "t&e", "tigers and elephants"]},
+	{name: "Tikal", maxPlayers: 4, nickNames: ["tikal"]},
+	{name: "Star Realms", maxPlayers: 2, nickNames: ["star realms"]}
 ];
 
 var sessions = [];
